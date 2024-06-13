@@ -39,8 +39,8 @@ Vector operator * (const double &a, const Vector& b);
 Vector operator * (const Vector &a, const double &b);
 Vector operator / (const Vector &a, const double &b);
 
-inline double dot(const Vector &a, const Vector &b);
-inline Vector cross(const Vector &a, const Vector &b);
+double dot(const Vector &a, const Vector &b);
+Vector cross(const Vector &a, const Vector &b);
 
 void operator += (Vector &a, const Vector &b);
 void operator -= (Vector &a, const Vector &b);
