@@ -14,11 +14,14 @@ public:
 
     size_t size() const;
     double area() const;
+    double energy(const Vector &P) const;
+
+    Vector centroid() const;
 
     void swap(Polygon &other);
     
-    void clip_by_bisector(const Vector &u, const Vector &v, double w1, double w2);
-    void clip_by_edge(const Vector &u, const Vector &v);
+    bool clip_by_bisector(const Vector &u, const Vector &v, double w1, double w2);
+    bool clip_by_edge(const Vector &u, const Vector &v);
     void clip_polygon(const Polygon &c);
 };
 
