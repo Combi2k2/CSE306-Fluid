@@ -4,14 +4,18 @@
 #include <vector>
 #include "../lib/lbfgs.h"
 #include "class_vector.h"
+#include "constant.h"
+
 #include "voronoi.h"
 
 class OptimalTransport {
 public:
     OptimalTransport() {}
-    OptimalTransport(const std::vector<Vector>& points = {}, const std::vector<double>& lambdas = {}) {
-        _points = points;
-        _lambdas = lambdas;
+    OptimalTransport(const std::vector<Vector> &points, const std::vector<double>& lambdas) {
+        this->points  = points;
+        this->lambdas = lambdas;
+        A.resize(points.size());
+        E.resize(points.size());
     }
 
     static lbfgsfloatval_t _evaluate(
@@ -32,21 +36,32 @@ public:
         const lbfgsfloatval_t step
         )
     {
-        std::vector<Polygon> voronoi;
-        
-        compute_voronoi(voronoi, _points, x);
+        compute_voronoi(voronoi, points, x);
 
         double fx = 0.0;
+        double volume_fluid = 0.0;
 
-        for (int i = 0 ; i < n ; ++i) {
-            double A = voronoi[i].area();
+#pragma omp parallel for schedule(dynamic)
+        for (int i = 0 ; i < n-1 ; ++i) {
+            if (x[i] <= x[n-1]) {
+                voronoi[i] = Polygon();
+            } else {
+                voronoi[i].clip_by_disc(points[i], sqrt(x[i] - x[n-1]));
+            }
 
-            g[i] = -(_lambdas[i] - A);
-
-            fx += voronoi[i].energy(_points[i]);
-            fx -= A * x[i];
-            fx += _lambdas[i] * x[i];
+            E[i] = voronoi[i].energy(points[i]);
+            A[i] = voronoi[i].area();
+            g[i] = -(lambdas[i] - A[i]);
         }
+        for (int i = 0 ; i < n-1 ; ++i) {
+            fx += E[i];
+            fx -= A[i] * x[i];
+            fx += lambdas[i] * x[i];
+            volume_fluid += A[i];
+        }
+        fx += x[n-1] * (VOLUME_AIR - (1.0 - volume_fluid));
+        g[n-1] = -(VOLUME_AIR - (1.0 - volume_fluid));
+        
         return -fx;
     }
 
@@ -87,11 +102,13 @@ public:
 
     void solve(double *weights) {
         double fx = 0.0;
-        size_t ret = lbfgs((int) _points.size(), weights, &fx, _evaluate, _progress, this, NULL);
+        int ret = lbfgs((int)points.size()+1, weights, &fx, _evaluate, _progress, this, NULL);
     }
 
-    std::vector<Vector> _points;
-    std::vector<double> _lambdas;
+    std::vector<Vector> points;
+    std::vector<double> lambdas;
+    std::vector<Polygon> voronoi;
+    std::vector<double> A, E;
 };
 
 #endif
