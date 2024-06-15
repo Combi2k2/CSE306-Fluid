@@ -48,10 +48,10 @@ void operator *= (Vector &a, const Vector &b);
 void operator *= (Vector &a, const double &b);
 void operator /= (Vector &a, const double &b);
 
-double check_intersect(const Vector &A, const Vector &B, const Vector &u, const Vector &v);
-double check_intersect_voronoi(const Vector &A, const Vector &B, const Vector &u, const Vector &v, double w1, double w2);
+double intersect(const Vector &A, const Vector &B, const Vector &u, const Vector &v);
+double intersect_bisector(const Vector &A, const Vector &B, const Vector &u, const Vector &v, double w1, double w2);
 
-bool check_inside(const Vector &P, const Vector &u, const Vector &v);
-bool check_inside_voronoi(const Vector &P, const Vector &u, const Vector &v, double w1, double w2);
+bool inside(const Vector &P, const Vector &u, const Vector &v);
+bool inside_bisector(const Vector &P, const Vector &u, const Vector &v, double w1, double w2);
 
 #endif
