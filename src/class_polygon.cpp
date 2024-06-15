@@ -1,5 +1,5 @@
 #include "../include/class_polygon.h"
-// #include "../include/constant.h"
+#include "../include/constant.h"
 
 Vector Polygon::operator [] (int i) const {
     return vertices[i];
@@ -27,16 +27,15 @@ double Polygon::energy(const Vector &P) const {
     
     if (vertices.size() >= 3) {
         for (size_t i = 1 ; i < vertices.size() - 1 ; ++i) {
-            const Vector &a = vertices[0];
-            const Vector &b = vertices[i];
-            const Vector &c = vertices[i+1];
+            const Vector &a = vertices[0] - P;
+            const Vector &b = vertices[i] - P;
+            const Vector &c = vertices[i+1] - P;
 
             double local_energy = 
-                dot(a - P, a - P) + dot(a - P, b - P) + dot(a - P, c - P) + \
-                dot(b - P, b - P) + dot(b - P, c - P) + \
-                dot(c - P, c - P);
+                dot(a, a) + dot(a, b) + dot(a, c) + \
+                dot(b, b) + dot(b, c) + dot(c, c);
             
-            double local_area = abs(
+            double local_area = 0.5 * abs(
                 (b[0] - a[0]) * (c[1] - a[1]) -
                 (b[1] - a[1]) * (c[0] - a[0])
             );
@@ -75,16 +74,16 @@ bool Polygon::clip_by_bisector(const Vector &u, const Vector &v, double w1, doub
         const Vector curr = vertices[i];
         const Vector prev = vertices[i ? i-1 : vertices.size() - 1];
 
-        if (check_inside_voronoi(curr, u, v, w1, w2)) {
-            if (!check_inside_voronoi(prev, u, v, w1, w2)) {
-                double t = check_intersect_voronoi(prev, curr, u, v, w1, w2);
+        if (inside_bisector(curr, u, v, w1, w2)) {
+            if (!inside_bisector(prev, u, v, w1, w2)) {
+                double t = intersect_bisector(prev, curr, u, v, w1, w2);
                 Vector P = prev + t * (curr - prev);
                 change = true;
                 ret.push_back(P);
             }
             ret.push_back(curr);
-        } else if (check_inside_voronoi(prev, u, v, w1, w2)) {
-            double t = check_intersect_voronoi(prev, curr, u, v, w1, w2);
+        } else if (inside_bisector(prev, u, v, w1, w2)) {
+            double t = intersect_bisector(prev, curr, u, v, w1, w2);
             Vector P = prev + t * (curr - prev);
             change = true;
             ret.push_back(P);
@@ -101,16 +100,16 @@ bool Polygon::clip_by_edge(const Vector &u, const Vector &v) {
         const Vector curr = vertices[i];
         const Vector prev = vertices[i ? i-1 : vertices.size() - 1];
 
-        if (check_inside(curr, u, v)) {
-            if (!check_inside(prev, u, v)) {
-                double t = check_intersect(prev, curr, u, v);
+        if (inside(curr, u, v)) {
+            if (!inside(prev, u, v)) {
+                double t = intersect(prev, curr, u, v);
                 Vector P = prev + t * (curr - prev);
                 change = true;
                 ret.push_back(P);
             }
             ret.push_back(curr);
-        } else if (check_inside(prev, u, v)) {
-            double t = check_intersect(prev, curr, u, v);
+        } else if (inside(prev, u, v)) {
+            double t = intersect(prev, curr, u, v);
             Vector P = prev + t * (curr - prev);
             change = true;
             ret.push_back(P);
@@ -118,6 +117,17 @@ bool Polygon::clip_by_edge(const Vector &u, const Vector &v) {
     }
     vertices.swap(ret);
     return change;
+}
+void Polygon::clip_by_disc(const Vector &C, const double &r) {
+    Vector u(1, 0);
+
+    for (int i = 1 ; i <= 30 ; ++i) {
+        const double theta = 2.0 * M_PI * i / 30;
+        const Vector v(cos(theta), sin(theta));
+
+        clip_by_edge(C + r * u, C + r * v);
+        u = v;
+    }
 }
 void Polygon::clip_polygon(const Polygon &c) {
     for (size_t i = 0 ; i < c.size() ; ++i)
