@@ -15,6 +15,7 @@ void save_svg(const std::vector<Polygon> &polygons, const std::string &filename,
 // polygons is a list of polygons, describing the current frame.
 // The polygon vertices are supposed to be in the range [0..1], and a canvas of size 1000x1000 is created
 void save_svg_animated(const std::vector<Polygon> &polygons, const std::string &filename, int frameid, int nbframes);
+void save_frame(const std::vector<Polygon> &cells, std::string filename, int frameid = 0);
 
 double urand();
 
