@@ -36,7 +36,7 @@ void compute_voronoi(std::vector<Polygon> &cells, const std::vector<Vector> &poi
             sqrt(max_weight - weights[i])
         ));
     
-    Kd_Tree kdtree(points_prime);
+    Kd_Tree kdtree(3, points_prime);
 
 #pragma omp parallel for schedule(dynamic, 1)
     for (size_t i = 0 ; i < points.size() ; ++i) {
@@ -47,7 +47,7 @@ void compute_voronoi(std::vector<Polygon> &cells, const std::vector<Vector> &poi
         int prev_k = 0;
         int curr_k = KDTREE_K;
 
-        for (; curr_k <= points.size() ; curr_k *= 2) {
+        for (; prev_k < points.size() ; curr_k += KDTREE_K) {
             kdtree.knnSearch(indices, points_prime[i], curr_k);
             bool change = true;
 
@@ -56,10 +56,11 @@ void compute_voronoi(std::vector<Polygon> &cells, const std::vector<Vector> &poi
                 if (idx == i)
                     continue;
                 
-                if (!S.clip_by_bisector(points[i], points[idx], weights[i], weights[idx])) {
+                if ((points_prime[i] - points_prime[idx]).norm2() > 4 * S.maxDist(points[i])) {
                     change = false;
                     break;
                 }
+                S.clip_by_bisector(points[i], points[idx], weights[i], weights[idx]);
             }
             if (!change)
                 break;
