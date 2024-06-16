@@ -45,6 +45,14 @@ double Polygon::energy(const Vector &P) const {
     }
     return result;
 }
+double Polygon::maxDist(const Vector &P) const {
+    double ret = 0;
+
+    for (const Vector &u : vertices)
+        ret = std::max(ret, (u - P).norm2());
+    
+    return ret;
+}
 
 Vector Polygon::centroid() const {
     const double A = area();
@@ -66,9 +74,8 @@ void Polygon::swap(Polygon &other) {
     vertices.swap(other.vertices);
 }
 
-bool Polygon::clip_by_bisector(const Vector &u, const Vector &v, double w1, double w2) {
+void Polygon::clip_by_bisector(const Vector &u, const Vector &v, double w1, double w2) {
     std::vector<Vector> ret;
-    bool change = false;
 
     for (size_t i = 0 ; i < vertices.size() ; ++i) {
         const Vector curr = vertices[i];
@@ -78,23 +85,19 @@ bool Polygon::clip_by_bisector(const Vector &u, const Vector &v, double w1, doub
             if (!inside_bisector(prev, u, v, w1, w2)) {
                 double t = intersect_bisector(prev, curr, u, v, w1, w2);
                 Vector P = prev + t * (curr - prev);
-                change = true;
                 ret.push_back(P);
             }
             ret.push_back(curr);
         } else if (inside_bisector(prev, u, v, w1, w2)) {
             double t = intersect_bisector(prev, curr, u, v, w1, w2);
             Vector P = prev + t * (curr - prev);
-            change = true;
             ret.push_back(P);
         }
     }
     vertices.swap(ret);
-    return change;
 }
-bool Polygon::clip_by_edge(const Vector &u, const Vector &v) {
+void Polygon::clip_by_edge(const Vector &u, const Vector &v) {
     std::vector<Vector> ret;
-    bool change = false;
 
     for (size_t i = 0 ; i < vertices.size() ; ++i) {
         const Vector curr = vertices[i];
@@ -104,19 +107,16 @@ bool Polygon::clip_by_edge(const Vector &u, const Vector &v) {
             if (!inside(prev, u, v)) {
                 double t = intersect(prev, curr, u, v);
                 Vector P = prev + t * (curr - prev);
-                change = true;
                 ret.push_back(P);
             }
             ret.push_back(curr);
         } else if (inside(prev, u, v)) {
             double t = intersect(prev, curr, u, v);
             Vector P = prev + t * (curr - prev);
-            change = true;
             ret.push_back(P);
         }
     }
     vertices.swap(ret);
-    return change;
 }
 void Polygon::clip_by_disc(const Vector &C, const double &r) {
     Vector u(1, 0);
