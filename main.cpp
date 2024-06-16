@@ -52,13 +52,11 @@ void step(int frameid) {
 }
 
 int main() {
-    const int N_PARTICLES = 100;
+    const int N_PARTICLES = 500;
     const int N_FRAMES = 400;
     // const int n_points = 2000;
 
     init(N_PARTICLES);
-
-    // step(0);
 
     for (int i = 0 ; i < N_FRAMES ; ++i)
         step(i);
